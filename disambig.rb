@@ -72,6 +72,12 @@ end
 woerterbuch = SQLite3::Database.open("woerterbuch.sqlite")
 #disambiguiere("Bank", ["sitze", "Park", "Zeitung"], woerterbuch)
 #disambiguiere("Käse", ["sitze", "Park"], woerterbuch)
-words.each do |w|
-	disambiguiere(w, words, woerterbuch)
+#words.each do |w|
+#	disambiguiere(w, words, woerterbuch)
+#end
+
+for i in (0...words.length) do
+	start = (i>5 ? i-5 : 0)
+	ende  = (i+5 > words.length ? words.length : i+5)
+	disambiguiere(words[i], words[start,ende], woerterbuch)
 end
