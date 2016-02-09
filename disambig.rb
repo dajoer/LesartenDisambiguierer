@@ -1,11 +1,15 @@
 #!/usr/bin/env ruby
 require 'sqlite3'
 
-def checkFile(file)
+def readFile(file)
 	if not test("f", file) then
 		puts "File #{file} not found."
 		exit
 	end
+	fileReader = open(file, "r")
+	text = fileReader.read.split
+	fileReader.close
+	return text
 end
 
 def lemmatize(w)
@@ -44,24 +48,24 @@ def disambiguiere(word, context, db)
 	end
 end
 
+def disambiguiereText(words, context, woerterbuch)
+	for i in (0...words.length) do
+		c = (context/2).to_i
+		start = (i>c ? i-c : 0)
+		disambiguiere(words[i], words[start,context+1], woerterbuch)
+	end
+end
+
 #Prüfen ob notwendige Dateien vorhanden sind
+#und Stoppwörter und Text einlesen
 if ARGV.length < 2 then
 	puts "Usage: disambig.rb <stopwordFile> <textFile>"
 	exit
 end
-checkFile(ARGV[0])
-checkFile(ARGV[1])
+stopWords = readFile(ARGV[0])
+text = readFile(ARGV[1])
 
-#Stoppwörter einlesen
-fileReader = open(ARGV[0], "r")
-stopWords = fileReader.read.split
-fileReader.close
-
-#Text einlesen
-fileReader = open(ARGV[1], "r")
-text = fileReader.read.split
-fileReader.close
-
+#Stoppwörter entfernen und Text Lemmatisieren
 words = []
 text.each do |w|
 	if not stopWords.include?(w)
@@ -69,15 +73,6 @@ text.each do |w|
 	end
 end
 
-woerterbuch = SQLite3::Database.open("woerterbuch.sqlite")
-#disambiguiere("Bank", ["sitze", "Park", "Zeitung"], woerterbuch)
-#disambiguiere("Käse", ["sitze", "Park"], woerterbuch)
-#words.each do |w|
-#	disambiguiere(w, words, woerterbuch)
-#end
+woerterB = SQLite3::Database.open("woerterbuch.sqlite")
 
-for i in (0...words.length) do
-	start = (i>5 ? i-5 : 0)
-	ende  = (i+5 > words.length ? words.length : i+5)
-	disambiguiere(words[i], words[start,ende], woerterbuch)
-end
+disambiguiereText(words, 4, woerterB)
